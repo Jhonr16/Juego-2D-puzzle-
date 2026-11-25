@@ -14,8 +14,10 @@ public class GameFrame extends JFrame {
     private final JPanel containerPanel = new JPanel(cardLayout);
     private final DatabaseManager dbManager = new DatabaseManager();
     private final StartPanel startPanel;
+    private GamePanel currentGamePanel;
 
     public GameFrame() {
+        super("No Way Out");
         setTitle("No Way Out");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -30,15 +32,30 @@ public class GameFrame extends JFrame {
     }
 
     private void showGame() {
-        GamePanel gamePanel = new GamePanel(dbManager, this::showStart);
-        containerPanel.add(gamePanel, GAME_VIEW);
+        if (currentGamePanel != null) {
+            containerPanel.remove(currentGamePanel);
+        }
+
+        currentGamePanel = new GamePanel(dbManager, this::showStart);
+        containerPanel.add(currentGamePanel, GAME_VIEW);
         cardLayout.show(containerPanel, GAME_VIEW);
-        gamePanel.requestFocusInWindow();
+        containerPanel.revalidate();
+        containerPanel.repaint();
+
+        SwingUtilities.invokeLater(currentGamePanel::requestFocusInWindow);
     }
 
     private void showStart() {
+        if (currentGamePanel != null) {
+            containerPanel.remove(currentGamePanel);
+            currentGamePanel = null;
+        }
+
         startPanel.refreshRecords();
         cardLayout.show(containerPanel, START_VIEW);
+        containerPanel.revalidate();
+        containerPanel.repaint();
+        SwingUtilities.invokeLater(startPanel::requestFocusInWindow);
     }
 
     public static void main(String[] args) {

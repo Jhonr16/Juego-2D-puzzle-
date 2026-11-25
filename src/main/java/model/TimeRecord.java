@@ -1,24 +1,17 @@
 package model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class TimeRecord {
-    private int id;
     private String playerName;
-    private int totalLevels;
+    private int levelsCompleted;
     private double elapsedSeconds;
     private int deaths;
-
-    public TimeRecord() {
-    }
-
-    public TimeRecord(String playerName, int totalLevels, double elapsedSeconds, int deaths) {
-        this.playerName = playerName;
-        this.totalLevels = totalLevels;
-        this.elapsedSeconds = elapsedSeconds;
-        this.deaths = deaths;
-    }
 }

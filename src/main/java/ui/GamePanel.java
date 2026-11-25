@@ -56,6 +56,10 @@ public class GamePanel extends JPanel implements ActionListener {
         for (KeyItem k : currentLevel.getKeys()) {
             k.setCollected(false);
         }
+        for (Enemy enemy : currentLevel.getEnemies()) {
+            enemy.setSafeSpawn(currentLevel.getStartX(), currentLevel.getStartY(), 48.0);
+        }
+        player.setKeysCollected(0);
         player.reset(currentLevel.getStartX(), currentLevel.getStartY());
     }
 
@@ -142,45 +146,14 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void updateEnemies() {
         for (Enemy enemy : currentLevel.getEnemies()) {
-            double oldX = enemy.getX();
-            double oldY = enemy.getY();
-
-            enemy.update();
-
-            if (enemy.getPattern() == null || enemy.getPattern() == MovementPattern.LINEAR) {
-                // Rebote contra paredes en X
-                for (Wall wall : currentLevel.getWalls()) {
-                    if (enemy.getBounds().intersects(wall.getBounds())) {
-                        if (enemy.getX() > oldX) {
-                            enemy.setX(wall.getX() - enemy.getSize() - 1);
-                            enemy.setDx(-Math.abs(enemy.getDx()));
-                        } else if (enemy.getX() < oldX) {
-                            enemy.setX(wall.getX() + wall.getWidth() + 1);
-                            enemy.setDx(Math.abs(enemy.getDx()));
-                        }
-                    }
-                }
-
-                // Rebote contra paredes en Y
-                for (Wall wall : currentLevel.getWalls()) {
-                    if (enemy.getBounds().intersects(wall.getBounds())) {
-                        if (enemy.getY() > oldY) {
-                            enemy.setY(wall.getY() - enemy.getSize() - 1);
-                            enemy.setDy(-Math.abs(enemy.getDy()));
-                        } else if (enemy.getY() < oldY) {
-                            enemy.setY(wall.getY() + wall.getHeight() + 1);
-                            enemy.setDy(Math.abs(enemy.getDy()));
-                        }
-                    }
-                }
-            }
+            enemy.update(player, currentLevel.getWalls());
         }
     }
 
     private Rectangle getStartZoneBounds() {
         return new Rectangle(
-                (int) currentLevel.getStartX() - 14,
-                (int) currentLevel.getStartY() - 14,
+                (int) Math.round(currentLevel.getStartX()) - 14,
+                (int) Math.round(currentLevel.getStartY()) - 14,
                 player.getSize() + 28,
                 player.getSize() + 28
         );
@@ -302,12 +275,17 @@ public class GamePanel extends JPanel implements ActionListener {
         g2.drawRect(ARENA_X + 2, ARENA_Y + 2, ARENA_WIDTH - 4, ARENA_HEIGHT - 4);
 
         boolean allKeysCollected = player.getKeysCollected() == currentLevel.getKeys().size();
+        boolean isTrollLevel = currentLevel.isReturnToStartGoal();
 
-        // Zona de inicio (tono neutro fijo con borde)
+        Color dullGreen = new Color(45, 95, 65);
+        Color brightGreen = new Color(135, 245, 165);
+
+        // Zona de inicio: si es nivel señuelo, es la salida real (se ilumina al recoger todas las monedas)
         Rectangle startZone = getStartZoneBounds();
-        g2.setColor(new Color(68, 80, 108));
+        boolean startIsRealExitLight = isTrollLevel && allKeysCollected;
+        g2.setColor(startIsRealExitLight ? brightGreen : new Color(68, 80, 108));
         g2.fillRect(startZone.x, startZone.y, startZone.width, startZone.height);
-        g2.setColor(new Color(125, 145, 185));
+        g2.setColor(startIsRealExitLight ? new Color(200, 255, 215) : new Color(125, 145, 185));
         g2.drawRect(startZone.x, startZone.y, startZone.width, startZone.height);
 
         // Paredes con relieve y borde
@@ -321,14 +299,12 @@ public class GamePanel extends JPanel implements ActionListener {
             g2.drawRect(wall.getX(), wall.getY(), wall.getWidth(), wall.getHeight());
         }
 
-        // Zona final: verde opaco antes de recoger todas las monedas, verde más clarito al recogerlas todas
+        // Zona derecha: solo se ilumina de verde clarito si NO es nivel señuelo y ya recogiste todas las monedas
         GoalZone goal = currentLevel.getGoal();
-        Color dullGoalGreen = new Color(45, 95, 65);
-        Color brightGoalGreen = new Color(135, 245, 165);
-
-        g2.setColor(allKeysCollected ? brightGoalGreen : dullGoalGreen);
+        boolean goalIsRealExitLight = !isTrollLevel && allKeysCollected;
+        g2.setColor(goalIsRealExitLight ? brightGreen : dullGreen);
         g2.fillRect(goal.getX(), goal.getY(), goal.getWidth(), goal.getHeight());
-        g2.setColor(allKeysCollected ? new Color(200, 255, 215) : new Color(75, 130, 95));
+        g2.setColor(goalIsRealExitLight ? new Color(200, 255, 215) : new Color(75, 130, 95));
         g2.drawRect(goal.getX(), goal.getY(), goal.getWidth(), goal.getHeight());
         g2.drawRect(goal.getX() + 3, goal.getY() + 3, goal.getWidth() - 6, goal.getHeight() - 6);
 
